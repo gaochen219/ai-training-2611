@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>经营 Agent · 现场互动</title>
+<style>
+:root{--ink:#0f1b33;--muted:#64748b;--line:#e2e8f3;--blue:#2563eb;--cyan:#06b6d4;--bg:#f4f7fc;--grad:linear-gradient(135deg,#2563eb,#06b6d4);--hot:#ff6b35}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.5}
+header{background:var(--grad);color:#fff;padding:22px 20px 26px;position:relative;overflow:hidden}
+header:after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border:28px solid rgba(255,255,255,.12);border-radius:50%}
+header small{display:block;font-size:13px;opacity:.85;letter-spacing:.04em}
+header h1{margin:4px 0 0;font-size:22px;line-height:1.35}
+main{padding:14px 14px 120px;max-width:560px;margin:0 auto}
+.q{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 16px 12px;margin:12px 0;box-shadow:0 4px 14px rgba(37,99,235,.05)}
+.q h2{font-size:17px;margin:0 0 4px;display:flex;gap:8px}
+.q h2 i{font-style:normal;color:var(--blue);font-weight:800}
+.q .hint{font-size:13px;color:var(--muted);margin:0 0 10px}
+.q.err{border-color:#f87171;box-shadow:0 0 0 3px rgba(248,113,113,.15)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1.5px solid var(--line);background:#f8fafc;border-radius:12px;padding:10px 14px;font-size:15px;cursor:pointer;user-select:none}
+.opt.on{border-color:var(--blue);background:#e8f0ff;color:var(--blue);font-weight:700}
+.opt.idk{color:var(--muted);border-style:dashed}
+.opt.idk.on{color:var(--blue);border-style:solid}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.scale .opt{text-align:center;padding:12px 0;font-size:18px;font-weight:700}
+.ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+textarea,input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;background:#f8fafc;resize:none}
+textarea:focus,input:focus{outline:none;border-color:var(--blue);background:#fff}
+.yn{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;padding:10px 0;border-top:1px solid #eef1f6}
+.yn:first-of-type{border-top:0}
+.yn p{margin:0;font-size:15px}
+.yn .opts{flex-wrap:nowrap;gap:6px}
+.yn .opt{padding:7px 10px;font-size:14px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:rgba(244,247,252,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+.bar button{display:block;width:100%;max-width:560px;margin:0 auto;border:0;border-radius:14px;padding:15px;font-size:17px;font-weight:700;color:#fff;background:var(--grad);box-shadow:0 8px 20px rgba(37,99,235,.25)}
+.bar button:disabled{opacity:.6}
+.msg{font-size:14px;color:#dc2626;text-align:center;min-height:20px;margin:6px 0 0}
+.done{text-align:center;padding:60px 20px}
+.done .ok{width:84px;height:84px;margin:0 auto 18px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px rgba(6,182,212,.35)}
+.done h2{margin:0 0 8px;font-size:22px}
+.done p{color:var(--muted);margin:0 0 22px}
+.ghost{border:1.5px solid var(--blue);color:var(--blue);background:#fff;border-radius:12px;padding:11px 20px;font-size:15px;font-weight:700;margin:6px}
+.lim{font-size:12px;color:var(--hot);margin-left:auto;font-weight:400}
+</style>
+</head>
+<body>
+<header><small id="sub">智启增长 · 经营 Agent · Day 1</small><h1 id="title">现场互动</h1></header>
+<main id="app"></main>
+<div class="bar" id="bar"><button id="go">提交</button><p class="msg" id="msg"></p></div>
+<script>
+(function(){
+// ===== 配置 =====
+var DEFAULT_API = '__LIVE_API__'; if (DEFAULT_API.indexOf('__') === 0) DEFAULT_API = '';  // 发布时由 publish.sh 从 _live/api.txt 注入
+var P = new URLSearchParams(location.search);
+var API = (P.get('api') || DEFAULT_API).replace(/\/$/, '');
+var C = (P.get('c') || '2611').replace(/[^a-z0-9]/gi, '');
+var F = P.get('f') || '1';
+var IDK = '还没想好';
+
+// ===== 表单定义 =====
+var AREA = ['获客与销售','报价与签单','客服与售后','订单与交付','采购与库存','财务与回款','人员与组织','经营决策'];
+var FORMS = {
+  '1': {t:'扫码 ① · 痛点墙', h:'你们公司最头疼的一个经营问题', q:[
+    {k:'ind', t:'所在行业', type:'one', o:['制造','贸易／批发','零售／电商','科技／软件','专业服务','消费服务','其他']},
+    {k:'size', t:'员工规模', type:'one', o:['50 人以下','50–200','200–500','500 以上']},
+    {k:'area', t:'最头疼的问题出在哪一块', type:'one', o:AREA, idk:1},
+    {k:'case', t:'具体是哪种情况', type:'multi', max:2, o:['信息靠人搬运、重复录入','响应慢，客户等不及','靠老师傅经验，换人就不行','数据说不清、对不上','错误多、返工多','库存或资金压得多','跟进不及时、漏单'], idk:1},
+    {k:'pain', t:'有多疼', type:'scale', ends:['1 小麻烦','5 影响生死']},
+    {k:'say', t:'一句话补充', type:'text', opt:1, ph:'例：报价要 2 天，客户等不及就跑了'}
+  ]},
+  '1b': {t:'扫码 · 经营逻辑', h:'你们公司最卡在 AI 落地的哪一条', q:[
+    {k:'stuck', t:'最卡在哪一条', type:'multi', max:2, o:['目标不清、算不清账','流程没改','数据底子薄','人跟不上','信任、风险和成本'], idk:1}
+  ]},
+  '2': {t:'扫码 ② · 场景上墙', h:'写下一个想用 AI 做的场景', multi:3, q:[
+    {k:'name', t:'场景名称', type:'text', short:1, ph:'例：AI 自动生成报价单', max:20},
+    {k:'v', t:'价值：做成了能省或多赚多少', type:'scale', ends:['1 很少','5 很多']},
+    {k:'f', t:'可行性：流程清楚、能找到负责的人', type:'scale', ends:['1 很难','5 很容易']},
+    {k:'d', t:'数据就绪：数据现成、干净', type:'scale', ends:['1 在脑子里','5 现成可用']},
+    {k:'r', t:'风险可控：出错的代价小', type:'scale', ends:['1 出错就是大事','5 能撤回']}
+  ]},
+  '3': {t:'扫码 ③ · 数据体检', h:'针对上午选的场景，逐题回答', q:[
+    {k:'chk', t:'10 道是非题', type:'yn', o:['是','部分','否'], items:[
+      '这个场景要用的数据，能说清在哪几个地方','关键指标有统一口径，并且写下来了','每张关键表都有一个业务负责人维护','有至少半年的历史数据','关键字段有值，不是大量空白或默认值',
+      '能导出一份样本（100 行左右）给 AI 试','知道哪些数据涉及隐私或机密，不能交给外部工具','规定了谁能看什么数据，AI 也按同样的权限','AI 给出的结果能追溯到原始数据','有人能写出 20–30 道标准问题和答案，用来测试 AI']}
+  ]},
+  '4': {t:'扫码 ④ · 案例门诊', h:'你们最可能踩哪两个坑', q:[
+    {k:'pit', t:'选 2 个', type:'multi', max:2, o:['1 先买工具再找场景，Demo 没人用','2 一次铺十个场景，撒胡椒面','3 交给 IT 或外包，业务部门不参与','4 老板自己不用，看不出 AI 错在哪','5 没人负责维护，三个月后没人用','6 数据散在 Excel、微信，口径对不上','7 系统里字段有，但没人填','8 指望一次做对，没留试错的时间','9 没有对照组，说不清有没有用'], idk:1}
+  ]},
+  '5': {t:'扫码 ⑤ · 今天的收获', h:'回去以后，我想先试的一件事', q:[
+    {k:'try', t:'回去以后，我想先试的一件事', type:'text', ph:'一句话，例：用 AI 先核对发票和送货单', max:40},
+    {k:'dir', t:'早上那个痛点，今天找到方向了吗', type:'scale', ends:['1 还很模糊','5 很清楚了']},
+    {k:'best', t:'今天最有收获的是哪一段', type:'one', o:['经营逻辑','场景识别','流程拆解','数据底座','案例门诊','沙盘与 21 天']}
+  ]}
+};
+var form = FORMS[F] || FORMS['1'];
+document.title = form.t + ' · 经营 Agent';
+document.getElementById('sub').textContent = form.t;
+document.getElementById('title').textContent = form.h;
+
+// 设备号：同一手机重复提交 = 覆盖，不会重复计数
+var dev;
+try { dev = localStorage.getItem('ai2611dev'); if (!dev) { dev = (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)); localStorage.setItem('ai2611dev', dev); } }
+catch (e) { dev = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
+var nth = 1;                       // 场景表单：第几条（最多 3 条）
+try { nth = Math.min(3, +(localStorage.getItem('ai2611n_' + C) || 1)); } catch (e) {}
+
+var app = document.getElementById('app'), go = document.getElementById('go'), msg = document.getElementById('msg'), bar = document.getElementById('bar');
+var A = {};
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]});}
+function render(){
+  A = {};
+  var h = '';
+  if (form.multi) h += '<p class="hint" style="margin:6px 4px 0">每家最多提交 3 个场景 · 现在是第 <b>' + nth + '</b> 个</p>';
+  form.q.forEach(function(q, i){
+    h += '<div class="q" data-k="' + q.k + '"><h2><i>' + (i + 1) + '</i><span>' + esc(q.t) + '</span>' +
+      (q.type === 'multi' ? '<span class="lim">最多选 ' + q.max + ' 项</span>' : '') + (q.opt ? '<span class="lim" style="color:var(--muted)">选填</span>' : '') + '</h2>';
+    if (q.type === 'one' || q.type === 'multi') {
+      h += '<div class="opts">' + q.o.map(function(o){return '<div class="opt" data-v="' + esc(o) + '">' + esc(o) + '</div>';}).join('') +
+        (q.idk ? '<div class="opt idk" data-v="' + IDK + '">' + IDK + '</div>' : '') + '</div>';
+    } else if (q.type === 'scale') {
+      h += '<div class="opts scale">' + [1,2,3,4,5].map(function(n){return '<div class="opt" data-v="' + n + '">' + n + '</div>';}).join('') + '</div>' +
+        '<div class="ends"><span>' + esc(q.ends[0]) + '</span><span>' + esc(q.ends[1]) + '</span></div>';
+    } else if (q.type === 'text') {
+      h += q.short ? '<input type="text" maxlength="' + (q.max || 40) + '" placeholder="' + esc(q.ph || '') + '">'
+                   : '<textarea rows="2" maxlength="' + (q.max || 40) + '" placeholder="' + esc(q.ph || '') + '"></textarea>';
+    } else if (q.type === 'yn') {
+      A[q.k] = new Array(q.items.length);
+      h += q.items.map(function(it, j){return '<div class="yn" data-j="' + j + '"><p>' + (j + 1) + '. ' + esc(it) + '</p><div class="opts">' +
+        q.o.map(function(o){return '<div class="opt" data-v="' + o + '">' + o + '</div>';}).join('') + '</div></div>';}).join('');
+    }
+    h += '</div>';
+  });
+  app.innerHTML = h; bar.style.display = ''; go.disabled = false; go.textContent = '提交'; msg.textContent = '';
+}
+
+app.addEventListener('click', function(e){
+  var o = e.target.closest('.opt'); if (!o) return;
+  var box = o.closest('.q'), k = box.getAttribute('data-k'), q = form.q.filter(function(x){return x.k === k;})[0], v = o.getAttribute('data-v');
+  box.classList.remove('err');
+  if (q.type === 'yn') {
+    var row = o.closest('.yn'); row.querySelectorAll('.opt').forEach(function(x){x.classList.toggle('on', x === o);});
+    A[k][+row.getAttribute('data-j')] = v; return;
+  }
+  if (q.type === 'multi') {
+    var cur = A[k] || [];
+    if (v === IDK) cur = cur.indexOf(IDK) >= 0 ? [] : [IDK];
+    else {
+      cur = cur.filter(function(x){return x !== IDK;});
+      var i = cur.indexOf(v);
+      if (i >= 0) cur.splice(i, 1);
+      else { if (cur.length >= q.max) { msg.textContent = '最多选 ' + q.max + ' 项，先取消一个'; return; } cur.push(v); }
+    }
+    A[k] = cur; msg.textContent = '';
+    box.querySelectorAll('.opt').forEach(function(x){x.classList.toggle('on', cur.indexOf(x.getAttribute('data-v')) >= 0);});
+    return;
+  }
+  A[k] = q.type === 'scale' ? +v : v;
+  box.querySelectorAll('.opt').forEach(function(x){x.classList.toggle('on', x === o);});
+});
+
+function collect(){
+  var bad = null;
+  form.q.forEach(function(q){
+    var box = app.querySelector('.q[data-k="' + q.k + '"]');
+    if (q.type === 'text') { A[q.k] = box.querySelector('input,textarea').value.trim(); }
+    var v = A[q.k], miss = false;
+    if (q.type === 'text') miss = !q.opt && !v;
+    else if (q.type === 'multi') miss = !v || !v.length;
+    else if (q.type === 'yn') { for (var j = 0; j < q.items.length; j++) if (!v[j]) miss = true; }
+    else miss = v == null;
+    if (miss) { box.classList.add('err'); if (!bad) bad = box; }
+  });
+  return bad;
+}
+
+go.addEventListener('click', function(){
+  var bad = collect();
+  if (bad) { msg.textContent = '还有题没填，标红的那题'; bad.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+  if (!API) { msg.textContent = '表单还没连上后台，请告诉老师'; return; }
+  go.disabled = true; go.textContent = '提交中…'; msg.textContent = '';
+  var ctl = window.AbortController ? new AbortController() : null; var tm = setTimeout(function(){ if (ctl) ctl.abort(); }, 10000);
+  fetch(API + '/submit', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({c:C, f:F, d:dev, n:form.multi ? nth : 1, a:A}), signal: ctl && ctl.signal})
+    .then(function(r){ clearTimeout(tm); if (!r.ok) throw 0; return r.json(); })
+    .then(function(){ done(); })
+    .catch(function(){ clearTimeout(tm); go.disabled = false; go.textContent = '再提交一次'; msg.textContent = '网络不太好，没提交上，再点一次'; });
+});
+
+function done(){
+  bar.style.display = 'none';
+  var more = form.multi && nth < 3;
+  app.innerHTML = '<div class="done"><div class="ok"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>' +
+    '<h2>提交好了</h2><p>抬头看大屏，结果马上出来</p>' +
+    (more ? '<button class="ghost" id="more">再加一个场景（第 ' + (nth + 1) + ' 个）</button>' : '') +
+    '<button class="ghost" id="redo">' + (form.multi ? '改刚才这个场景' : '改一下答案') + '</button></div>';
+  if (more) document.getElementById('more').onclick = function(){ nth++; try { localStorage.setItem('ai2611n_' + C, nth); } catch (e) {} render(); window.scrollTo(0, 0); };
+  document.getElementById('redo').onclick = function(){ render(); window.scrollTo(0, 0); };
+}
+render();
+})();
+</script>
+</body></html>
