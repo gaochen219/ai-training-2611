@@ -55,7 +55,7 @@ textarea:focus,input:focus{outline:none;border-color:var(--blue);background:#fff
 var DEFAULT_API = 'https://ai-live-rcmojvyknk.cn-hangzhou.fcapp.run'; if (DEFAULT_API.indexOf('__') === 0) DEFAULT_API = '';  // 发布时由 publish.sh 从 _live/api.txt 注入
 var P = new URLSearchParams(location.search);
 var API = (P.get('api') || DEFAULT_API).replace(/\/$/, '');
-var C = (P.get('c') || '2611').replace(/[^a-z0-9]/gi, '');
+var C = (P.get('c') || '1128').replace(/[^a-z0-9]/gi, '');
 var F = P.get('f') || '1';
 var IDK = '还没想好';
 
